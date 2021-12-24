@@ -1,22 +1,20 @@
 # Base image for the container
-FROM php:7.2-apache
+FROM php:7.4-apache
 
-# Install GIT, GnuPG, NodeJS and NPM
-RUN apt-get update && apt-get install -y git gnupg && \
-    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
-    apt-get install -y nodejs
+# Dependencies
+RUN apt-get update -y && apt-get install -y ssh libpng-dev libmagickwand-dev libjpeg-dev libmemcached-dev zlib1g-dev libzip-dev git unzip subversion ca-certificates libicu-dev libxml2-dev libmcrypt-dev && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/
 
-# Add some php extensions
-RUN apt-get install -y \
-    unzip \
-    vim \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    && docker-php-ext-install -j$(nproc) zip mysqli pdo_mysql \
-    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
-    && docker-php-ext-install -j$(nproc) gd
+# PHP Extensions - PECL
+RUN pecl install imagick-3.4.4 memcached mcrypt-1.0.4 && docker-php-ext-enable imagick memcached mcrypt
+
+# PHP Extensions - docker-php-ext-install
+RUN docker-php-ext-install zip gd mysqli exif pdo pdo_mysql opcache intl soap
+
+# PHP Extensions - enable mysqli
+RUN docker-php-ext-enable mysqli
+
+# PHP Extensions - docker-php-ext-configure
+RUN docker-php-ext-configure intl
 
 # Make WordPress feel comfortable with mod-rewrite
 RUN a2enmod rewrite && service apache2 restart
-#E XPOSE 80
